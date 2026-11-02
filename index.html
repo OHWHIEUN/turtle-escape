@@ -85,6 +85,23 @@ td.cover-ttl{text-align:center;font-size:31px;font-weight:900;color:var(--xl-gre
 td.cover-sub{text-align:center;font-size:14px;color:var(--ink);padding-bottom:12px}
 td.cover-mini{text-align:center;font-size:13px;font-weight:700;color:var(--navy);background:var(--navy-soft)}
 td.cover-mini:empty{background:#fff}
+/* PC 화면 */
+.ribbon{display:none}
+@media (min-width:900px){
+  .app{max-width:none}
+  .ribbon{display:flex;align-items:stretch;gap:0;padding:6px 6px 4px;border-bottom:1px solid var(--grid);background:#FAFBFA;font-size:12px;color:var(--ink);overflow:hidden;white-space:nowrap}
+  .rg{position:relative;display:flex;align-items:center;gap:6px;padding:2px 14px 16px;border-right:1px solid var(--grid)}
+  .rlbl{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:11px;color:var(--muted)}
+  .rb{border:1px solid #D6DAD8;background:#fff;padding:3px 8px;border-radius:2px}
+  .rfont{min-width:96px}
+  .rt{display:inline-block;min-width:16px;text-align:center;font-style:normal;text-decoration:none;color:var(--ink)}
+  i.rt{font-style:italic} u.rt{text-decoration:underline} b.rt{font-weight:800}
+  .rbig{text-align:center;font-size:11.5px;line-height:1.3}
+  table.grid.wide{width:auto}
+  table.grid.wide col.cw{width:122px}
+  table.grid.wide col.cx{width:74px}
+  .titlebar .fname{text-align:center}
+}
 td.hl{background:var(--navy-soft);font-weight:700;color:var(--navy)}
 td.sel{outline:2px solid var(--xl-green);outline-offset:-2px}
 td.sel::after{content:"";position:absolute;right:-3px;bottom:-3px;width:6px;height:6px;background:var(--xl-green);border:1px solid #fff;z-index:2}
@@ -161,6 +178,14 @@ td.st{text-align:center;font-weight:700;color:#24513A;background:var(--xl-green-
     <button class="snd" id="snd" aria-pressed="false" type="button"></button>
   </div>
   <div class="menu" aria-hidden="true"><span>파일</span><span class="on">홈</span><span>삽입</span><span>수식</span><span>데이터</span><span>검토</span><span>보기</span></div>
+  <div class="ribbon" aria-hidden="true">
+    <div class="rg"><span class="rbig">📋<br>붙여넣기</span><span class="rlbl">클립보드</span></div>
+    <div class="rg"><span class="rb rfont">맑은 고딕 ▾</span><span class="rb">11 ▾</span><b class="rt">가</b><i class="rt">가</i><u class="rt">가</u><span class="rlbl">글꼴</span></div>
+    <div class="rg"><span class="rt">≡</span><span class="rt">☰</span><span class="rb">병합하고 가운데 맞춤</span><span class="rlbl">맞춤</span></div>
+    <div class="rg"><span class="rb">일반 ▾</span><span class="rt">%</span><span class="rt">,</span><span class="rlbl">표시 형식</span></div>
+    <div class="rg"><span class="rb">조건부 서식</span><span class="rb">표 서식</span><span class="rb">셀 스타일</span><span class="rlbl">스타일</span></div>
+    <div class="rg"><span class="rb">Σ 자동 합계</span><span class="rb">정렬 및 필터</span><span class="rlbl">편집</span></div>
+  </div>
   <div class="fbar">
     <div class="namebox" id="nameBox">A1</div>
     <div class="fx">fx</div>
@@ -438,13 +463,18 @@ function recordRows(){
 
 /* ===== 시트 그리기 ===== */
 function cell(h,o){ o=o||{}; return {h:h, s:o.s||1, c:o.c||"", id:o.id||""}; }
+/* PC(넓은 화면)에서는 실제 엑셀처럼 열을 더 보여줌 */
+const wideMQ=window.matchMedia?window.matchMedia("(min-width: 900px)"):null;
+let WIDE=!!(wideMQ&&wideMQ.matches);
 function sheetHTML(rows,total){
-  let h='<table class="grid"><colgroup><col class="rh">'+'<col>'.repeat(6)+'</colgroup><thead><tr><th></th>'
-    +"ABCDEF".split("").map(c=>"<th>"+c+"</th>").join("")+'</tr></thead><tbody>';
+  const EX=WIDE?9:0, L="ABCDEFGHIJKLMNOPQRSTUVWXYZ".slice(0,6+EX).split(""), pad="<td></td>".repeat(EX);
+  let h='<table class="grid'+(WIDE?" wide":"")+'"><colgroup><col class="rh">'+(WIDE?'<col class="cw">'.repeat(6)+'<col class="cx">'.repeat(EX):'<col>'.repeat(6))+'</colgroup><thead><tr><th></th>'
+    +L.map(c=>"<th>"+c+"</th>").join("")+'</tr></thead><tbody>';
   rows.forEach((cells,r)=>{
-    h+="<tr><th>"+(r+1)+"</th>"+cells.map(c=>'<td colspan="'+c.s+'"'+(c.c?' class="'+c.c+'"':"")+(c.id?' id="'+c.id+'"':"")+">"+c.h+"</td>").join("")+"</tr>";
+    h+="<tr><th>"+(r+1)+"</th>"+cells.map(c=>'<td colspan="'+c.s+'"'+(c.c?' class="'+c.c+'"':"")+(c.id?' id="'+c.id+'"':"")+">"+c.h+"</td>").join("")+pad+"</tr>";
   });
-  for(let r=rows.length;r<(total||rows.length+8);r++) h+='<tr class="empty"><th>'+(r+1)+"</th>"+"<td></td>".repeat(6)+"</tr>";
+  const tot=(total||rows.length+8)+(WIDE?8:0);
+  for(let r=rows.length;r<tot;r++) h+='<tr class="empty"><th>'+(r+1)+"</th>"+"<td></td>".repeat(6+EX)+"</tr>";
   return h+"</tbody></table>";
 }
 const chart=(title,svg,cap)=>'<div class="chartbox"><div class="ctitle">'+title+'</div>'+svg+(cap?'<div class="cap">'+cap+'</div>':"")+'</div>';
@@ -840,6 +870,7 @@ paintSound();
 function home(){ run=null; unlockScreen(); try{ if(location.hash) history.replaceState(null,"",location.pathname+location.search); }catch(e){} window.scrollTo(0,0); goTo(0); tabsEl.scrollLeft=0; }
 home();
 window.addEventListener("pageshow",e=>{ if(e.persisted) home(); });
+if(wideMQ){ const onW=e=>{ WIDE=e.matches; if(!run) goTo(cur); }; if(wideMQ.addEventListener) wideMQ.addEventListener("change",onW); else if(wideMQ.addListener) wideMQ.addListener(onW); }
 requestAnimationFrame(loop);
 })();
 </script>
