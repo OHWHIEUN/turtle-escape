@@ -395,6 +395,21 @@ function drawTurtle(dt){
 }
 function snapTurtle(){ const tg=$("fHead")?frontTarget():headTarget(); T.hx=tg.hx;T.hy=tg.hy;T.rot=tg.rot;T.arm=tg.arm; drawTurtle(null); }
 
+/* ===== 익명 방문 통계 (GoatCounter, 쿠키 없음) — GitHub 주소에서만 동작 ===== */
+const GC_CODE="turtle-escape";
+const TRACK=/github\.io$/.test(location.hostname)&&!!GC_CODE;
+if(TRACK){ try{ const s=document.createElement("script"); s.async=true; s.src="https://gc.zgo.at/count.js"; s.setAttribute("data-goatcounter","https://"+GC_CODE+".goatcounter.com/count"); document.head.appendChild(s); }catch(e){} }
+function track(path,title,tries){
+  if(!TRACK) return;
+  tries=tries||0;
+  try{
+    if(window.goatcounter&&window.goatcounter.count){ window.goatcounter.count({path:path,title:title,event:true}); return; }
+  }catch(e){ return; }
+  if(tries<20) setTimeout(()=>track(path,title,tries+1),500);
+}
+function timeBucket(ms){ const m=ms/60000; return m<4?"time-under4":m<6?"time-4to6":m<10?"time-6to10":"time-over10"; }
+const BUCKET_TITLE={"time-under4":"완료 시간: 4분 미만","time-4to6":"완료 시간: 4~6분","time-6to10":"완료 시간: 6~10분","time-over10":"완료 시간: 10분 이상"};
+
 /* ===== 나의 탈출 기록 (이 기기 브라우저에 저장) ===== */
 const LOG_KEY="turtleEscapeLog_v1";
 const storageOK=(()=>{ try{ localStorage.setItem("__te","1"); localStorage.removeItem("__te"); return true; }catch(e){ return false; } })();
@@ -530,10 +545,12 @@ const RENDER={
    [cell("사무직 종사자를 위한 10분 바른 자세와 스트레칭",{s:6,c:"cover-sub"})],
    [cell(chart("",turtleSVG(),"목이 쭉 나온 거북이를 구해 주세요!"),{s:6,c:"chart"})],
    [cell(mini,{s:6,c:"cover-mini"})],
-   [cell('<button class="btn" type="button" data-go="1">시작하기 ▶</button>',{s:3,c:"btncell"}),cell('<button class="btn sub" type="button" data-go="'+(FIRST_MOVE-1)+'">바로 스트레칭</button>',{s:3,c:"btncell"})],
+   [cell('<button class="btn" type="button" data-go="1" id="bStart">시작하기 ▶</button>',{s:3,c:"btncell"}),cell('<button class="btn sub" type="button" data-go="'+(FIRST_MOVE-1)+'" id="bQuick">바로 스트레칭</button>',{s:3,c:"btncell"})],
    [cell('<button class="btn sub" type="button" data-go="2">나의 탈출 기록 보기</button>',{s:6,c:"btncell"})],
    [cell(SRC,{s:6,c:"small c"})]
   ],16);
+  $("bStart").addEventListener("click",()=>track("click-start","표지: 시작하기"));
+  $("bQuick").addEventListener("click",()=>track("click-quick","표지: 바로 스트레칭"));
   setBar("A2","=거북이탈출대작전()"); setStatus("준비");
  },
  intro(){ // 소개
@@ -547,6 +564,7 @@ const RENDER={
    [cell("준비물",{s:2,c:"lbl"}),cell("의자, 휴대폰(또는 PC)",{s:4})],
    [cell("소리",{s:2,c:"lbl"}),cell('<button class="btn sub" type="button" id="snd2"></button>',{s:2,c:"btncell"}),cell("이어폰이 있으면 켜 보세요",{s:2,c:"small"})],
    [cell("주의",{s:2,c:"lbl"}),cell("통증이 심하거나 저림이 있으면 멈추고 전문가와 상담하세요.",{s:4})],
+   [cell("안내",{s:2,c:"lbl"}),cell("이용 현황을 알기 위해 쿠키 없이 익명 방문 통계를 수집해요. 이름 등 개인정보는 모으지 않아요.",{s:4,c:"small"})],
    [cell(SRC,{s:6,c:"small"})],
    navRow(0,2)
   ],18);
@@ -702,7 +720,7 @@ const RENDER={
     updateRec(curRec,{score:ans?yes:null, feel:feel});
   };
   Q.forEach((_,i)=>$("c"+i).addEventListener("change",upd)); $("feel").addEventListener("change",upd);
-  $("toDone").addEventListener("click",()=>{ goTo(DONE_SHEET); if(doneMoves.size){ sfx("fanfare"); buzz(); } });
+  $("toDone").addEventListener("click",()=>{ track("selfcheck-done","자가체크 완료"); goTo(DONE_SHEET); if(doneMoves.size){ sfx("fanfare"); buzz(); } });
   setBar("E4",'=COUNTIF(E4:E8,"예")'); setStatus("자가체크");
  },
  done(){
@@ -751,6 +769,7 @@ function phasesFor(m){
   return p;
 }
 function startStretching(){
+  track("stretch-start","스트레칭 시작");
   doneMoves=new Set(); sessionStart=Date.now(); curRec=null; lastAward=null; lockScreen();
   if(soundOn&&ctx){ try{ctx.resume()}catch(e){} }
   startMove(0);
@@ -800,7 +819,9 @@ function nextPhase(){
 }
 function advance(mi){
   if(mi<MOVES.length-1){ startMove(mi+1); }
-  else{ run=null; unlockScreen(); duck(false); curRec=(doneMoves.size===MOVES.length)?recordSession():null; goTo(CHECK_SHEET); }
+  else{ run=null; unlockScreen(); duck(false); curRec=(doneMoves.size===MOVES.length)?recordSession():null;
+    if(doneMoves.size===MOVES.length){ track("stretch-complete","5동작 완료"); const b=timeBucket(Date.now()-sessionStart); track(b,BUCKET_TITLE[b]); }
+    goTo(CHECK_SHEET); }
 }
 function moveDone(skipped){ const mi=run.mi; if(!skipped) doneMoves.add(mi); advance(mi); }
 function finishMove(){
@@ -869,6 +890,7 @@ function loop(now){
 paintSound();
 function home(){ run=null; unlockScreen(); try{ if(location.hash) history.replaceState(null,"",location.pathname+location.search); }catch(e){} window.scrollTo(0,0); goTo(0); tabsEl.scrollLeft=0; }
 home();
+try{ if(storageOK&&loadLog().length) track("returning-user","기록 있는 사용자 재방문"); }catch(e){}
 window.addEventListener("pageshow",e=>{ if(e.persisted) home(); });
 if(wideMQ){ const onW=e=>{ WIDE=e.matches; if(!run) goTo(cur); }; if(wideMQ.addEventListener) wideMQ.addEventListener("change",onW); else if(wideMQ.addListener) wideMQ.addListener(onW); }
 requestAnimationFrame(loop);
