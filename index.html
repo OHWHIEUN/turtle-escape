@@ -80,6 +80,11 @@ td.pick:hover{background:var(--navy-soft)}
 .dl{font-size:12px;color:var(--muted)}
 .stp.today .dl{color:var(--xl-green);font-weight:800}
 .nexthint{font-size:12px;color:var(--muted);margin-left:6px}
+td.kicker{text-align:center;font-size:12.5px;color:var(--muted);letter-spacing:.5px;padding-top:14px}
+td.cover-ttl{text-align:center;font-size:31px;font-weight:900;color:var(--xl-green);letter-spacing:-.5px;padding:4px 8px 2px;text-wrap:balance}
+td.cover-sub{text-align:center;font-size:14px;color:var(--ink);padding-bottom:12px}
+td.cover-mini{text-align:center;font-size:13px;font-weight:700;color:var(--navy);background:var(--navy-soft)}
+td.cover-mini:empty{background:#fff}
 td.hl{background:var(--navy-soft);font-weight:700;color:var(--navy)}
 td.sel{outline:2px solid var(--xl-green);outline-offset:-2px}
 td.sel::after{content:"";position:absolute;right:-3px;bottom:-3px;width:6px;height:6px;background:var(--xl-green);border:1px solid #fff;z-index:2}
@@ -188,8 +193,9 @@ const MOVES=[
   formula:"=목돌리기(시계 5회, 반시계 5회)", how:"목을 천천히 크게 돌려요. 시계 방향 5번, 반대 방향 5번이에요.",
   point:"빠르게 돌리지 말고 천천히!", basis:"질병관리청 「일자목(거북목)증후군」, 2026년", hint:"", front:true}
 ];
-const SHEETS=["표지","자가진단","머리무게","바른자세","약속"].concat(MOVES.map(m=>m.tab)).concat(["자가체크","완료"]);
-const FIRST_MOVE=5, DONE_SHEET=SHEETS.length-1, CHECK_SHEET=SHEETS.length-2;
+const PAGES=["cover","intro","log","diag","weight","posture","promise"];
+const SHEETS=["표지","소개","기록","자가진단","머리무게","바른자세","약속"].concat(MOVES.map(m=>m.tab)).concat(["자가체크","완료"]);
+const FIRST_MOVE=7, DONE_SHEET=SHEETS.length-1, CHECK_SHEET=SHEETS.length-2;
 const SRC="출처: 질병관리청 「일자목(거북목)증후군」, 2026년";
 
 const $=id=>document.getElementById(id);
@@ -468,10 +474,10 @@ function goTo(i,opts){
   opts=opts||{};
   if(run&&!opts.keepRun){ run=null; unlockScreen(); duck(false); }
   cur=i; T.hint=""; T.act="none";
-  if(i<FIRST_MOVE) T.n=(i===3)?0:1;
+  if(i<FIRST_MOVE) T.n=(i===5)?0:1;
   else if(i<CHECK_SHEET) T.n=1-(i-FIRST_MOVE)/5;
   else T.n=0;
-  const r=RENDER[i<FIRST_MOVE?i:(i<CHECK_SHEET?"move":(i===CHECK_SHEET?"check":"done"))];
+  const r=RENDER[i<FIRST_MOVE?PAGES[i]:(i<CHECK_SHEET?"move":(i===CHECK_SHEET?"check":"done"))];
   r(i);
   gridWrap.scrollTop=0;
   renderTabs(); snapTurtle();
@@ -483,27 +489,53 @@ function doneMsg(){
   return '<b>오늘 '+s.todayN+'번째 탈출!</b> 누적 '+s.total+'회 · 연속 '+s.streak+'일째'+(lastAward?' <span class="chip ok">새 칭호 획득: '+lastAward+'!</span>':'');
 }
 const RENDER={
- 0(){ // 표지
+ cover(){ // 표지
+  T.n=1;
+  let mini="첫 탈출을 기다리고 있어요";
+  if(storageOK){ const s=stats(loadLog()), t=titleFor(s.total); if(s.total) mini=(t?"나의 칭호 「"+t+"」 · ":"")+"누적 "+s.total+"회 · 연속 "+s.streak+"일째"; }
+  else mini="";
   gridWrap.innerHTML=sheetHTML([
-   [cell("거북이 탈출 대작전",{s:6,c:"ttl"})],
-   [cell("사무직 종사자를 위한 10분 바른 자세와 스트레칭",{s:6,c:"sub"})],
-   [cell('<button class="btn" type="button" data-go="1">처음부터 시작 ▶</button>',{s:3,c:"btncell"}),cell('<button class="btn sub" type="button" data-go="4">바로 스트레칭</button>',{s:3,c:"btncell"})],
-   [cell("통증이 심하거나 저림이 있으면 멈추고 전문가와 상담하세요.",{s:6,c:"small"})],
-   ...recordRows(),
-   [cell(chart("차트 1",turtleSVG(),"목이 쭉 나온 거북이를 구해 주세요!"),{s:6,c:"chart"})],
+   [cell("목·어깨 10분 스트레칭 프로그램",{s:6,c:"kicker"})],
+   [cell("거북이 탈출 대작전",{s:6,c:"cover-ttl"})],
+   [cell("사무직 종사자를 위한 10분 바른 자세와 스트레칭",{s:6,c:"cover-sub"})],
+   [cell(chart("",turtleSVG(),"목이 쭉 나온 거북이를 구해 주세요!"),{s:6,c:"chart"})],
+   [cell(mini,{s:6,c:"cover-mini"})],
+   [cell('<button class="btn" type="button" data-go="1">시작하기 ▶</button>',{s:3,c:"btncell"}),cell('<button class="btn sub" type="button" data-go="'+(FIRST_MOVE-1)+'">바로 스트레칭</button>',{s:3,c:"btncell"})],
+   [cell('<button class="btn sub" type="button" data-go="2">나의 탈출 기록 보기</button>',{s:6,c:"btncell"})],
+   [cell(SRC,{s:6,c:"small c"})]
+  ],16);
+  setBar("A2","=거북이탈출대작전()"); setStatus("준비");
+ },
+ intro(){ // 소개
+  T.n=1;
+  gridWrap.innerHTML=sheetHTML([
+   [cell("프로그램 소개",{s:6,c:"ttl"})],
+   [cell("취지",{s:2,c:"lbl"}),cell("오래 앉아서 화면을 보면 고개가 앞으로 빠지는 거북목이 생기기 쉬워요. 자리에서 10분, 질병관리청 자료에 나온 목·어깨 운동으로 바른 자세를 되찾아요.",{s:4})],
    [cell("대상",{s:2,c:"lbl"}),cell("오래 앉아서 일하는 사무직 종사자",{s:4})],
    [cell("소요 시간",{s:2,c:"lbl"}),cell("약 10분 (스트레칭만 약 5분)",{s:4})],
-   [cell("구성",{s:2,c:"lbl"}),cell("거북목 체크 → 바른 자세 → 목·어깨 스트레칭 5가지",{s:4})],
+   [cell("구성",{s:2,c:"lbl"}),cell("나의 기록 → 거북목 체크 → 바른 자세 → 목·어깨 스트레칭 5가지 → 자가체크",{s:4})],
    [cell("준비물",{s:2,c:"lbl"}),cell("의자, 휴대폰(또는 PC)",{s:4})],
    [cell("소리",{s:2,c:"lbl"}),cell('<button class="btn sub" type="button" id="snd2"></button>',{s:2,c:"btncell"}),cell("이어폰이 있으면 켜 보세요",{s:2,c:"small"})],
-   [cell(SRC,{s:6,c:"small"})]
+   [cell("주의",{s:2,c:"lbl"}),cell("통증이 심하거나 저림이 있으면 멈추고 전문가와 상담하세요.",{s:4})],
+   [cell(SRC,{s:6,c:"small"})],
+   navRow(0,2)
   ],18);
   $("snd2").addEventListener("click",()=>setSound(!soundOn)); paintSound();
-  const rb=$("logReset");
-  if(rb) rb.addEventListener("click",()=>{ if(rb.dataset.arm){ saveLog([]); goTo(0); } else { rb.dataset.arm="1"; rb.textContent="한 번 더 누르면 지워져요"; } });
-  setBar("A1","=거북이탈출대작전()"); setStatus("준비");
+  setBar("C2","=프로그램소개()"); setStatus("준비");
  },
- 1(){ // 자가진단
+ log(){ // 기록
+  T.n=1;
+  const rr=recordRows();
+  gridWrap.innerHTML=sheetHTML([
+   [cell("나의 탈출 기록",{s:6,c:"ttl"})],
+   ...(storageOK?rr.slice(1):rr),
+   navRow(1,3)
+  ],18);
+  const rb=$("logReset");
+  if(rb) rb.addEventListener("click",()=>{ if(rb.dataset.arm){ saveLog([]); goTo(2); } else { rb.dataset.arm="1"; rb.textContent="한 번 더 누르면 지워져요"; } });
+  setBar("C3","=나의탈출기록()"); setStatus("준비");
+ },
+ diag(){ // 자가진단
   T.n=1;
   const lines='<line x1="166" y1="34" x2="166" y2="134" stroke="#1F3A68" stroke-width="2" stroke-dasharray="5 4"/>'
    +'<line x1="211" y1="34" x2="211" y2="134" stroke="#1F3A68" stroke-width="2" stroke-dasharray="5 4"/>'
@@ -519,7 +551,7 @@ const RENDER={
    ...Q.map((q,i)=>[cell(String(i+1),{c:"num"}),cell(q,{s:3}),cell(sel(i),{s:2})]),
    [cell("거북이 위험도",{s:2,c:"lbl"}),cell('<span class="chip none" id="risk">응답을 골라 주세요</span>',{s:4,id:"riskCell"})],
    [cell("※ 진단이 아닌 자가 확인용이에요. 귀-어깨 기준은 질병관리청 자료를 따랐어요.",{s:6,c:"small"})],
-   navRow(0,2)
+   navRow(2,4)
   ],18);
   const upd=()=>{
     const v=[0,1,2,3].map(i=>$("q"+i).value), yes=v.filter(x=>x==="예").length, answered=v.filter(Boolean).length;
@@ -533,7 +565,7 @@ const RENDER={
   [0,1,2,3].forEach(i=>$("q"+i).addEventListener("change",upd));
   setBar("E5",'=COUNTIF(E5:E8,"예")'); setStatus("준비");
  },
- 2(){ // 머리무게
+ weight(){ // 머리무게
   T.n=0; T.act="weight"; T.angle=0;
   const ANG=[0,15,30,45,60], KG=[5,12,18,22,27];
   const gauge='<rect x="10" y="34" width="18" height="96" fill="#F1F3F2" stroke="#C9D0CC"/><rect id="gFill" x="10" y="112" width="18" height="18" fill="#3E68B0"/>'
@@ -548,7 +580,7 @@ const RENDER={
    [cell("kg",{c:"hdr"}),...KG.map((k,i)=>cell(String(k),{c:"num",id:"hk"+i}))],
    [cell("스마트폰을 볼 때 고개는 보통 37~47도 숙여져요. 이때 목이 받는 무게는 평소의 3~4배예요.",{s:6})],
    [cell(SRC,{s:6,c:"small"})],
-   navRow(1,3)
+   navRow(3,5)
   ],18);
   const upd=()=>{
     const a=+$("ang").value, i=ANG.indexOf(a), kg=KG[i];
@@ -564,7 +596,7 @@ const RENDER={
   upd();
   setStatus("준비");
  },
- 3(){ // 바른자세
+ posture(){ // 바른자세
   T.n=0;
   gridWrap.innerHTML=sheetHTML([
    [cell("바른 자세 3가지",{s:6,c:"ttl"})],
@@ -574,11 +606,11 @@ const RENDER={
    [cell("2",{c:"num"}),cell("같은 자세로 오래 있지 않기",{s:2,c:"lbl"}),cell("중간중간 자세를 바꿔 주세요.",{s:3})],
    [cell("3",{c:"num"}),cell("30~40분마다 쉬기",{s:2,c:"lbl"}),cell("잠깐 멈추고 목을 가볍게 돌려 주세요.",{s:3})],
    [cell(SRC,{s:6,c:"small"})],
-   navRow(2,4)
+   navRow(4,6)
   ],18);
   setBar("B4","=바른자세(3)"); setStatus("준비");
  },
- 4(){ // 약속
+ promise(){ // 약속
   T.n=1;
   const P=["가볍게 늘어나는 느낌까지만 해요.","뻐근할 만큼 세게 늘리지 않아요. 오히려 다칠 수 있어요.","아프거나 저리면 바로 멈춰요.","숨은 참지 말고 편하게 쉬어요."];
   gridWrap.innerHTML=sheetHTML([
@@ -588,7 +620,7 @@ const RENDER={
    [cell("동작",{s:2,c:"lbl"}),cell("목·어깨 5가지, 앉은 자리에서",{s:4})],
    [cell("시간",{s:2,c:"lbl"}),cell("약 5분, 한 동작이 끝나면 ‘다음 동작’을 눌러요",{s:4})],
    [cell('<button class="btn" type="button" id="goStretch">스트레칭 시작 ▶</button>',{s:6,c:"btncell"})],
-   [cell('<button class="btn sub" type="button" data-go="3">◀ 이전</button>',{s:3,c:"btncell"}),cell("",{s:3})]
+   [cell('<button class="btn sub" type="button" data-go="5">◀ 이전</button>',{s:3,c:"btncell"}),cell("",{s:3})]
   ],18);
   $("goStretch").addEventListener("click",startStretching);
   setBar("A3","=약속지키기(4)"); setStatus("준비");
@@ -678,7 +710,7 @@ gridWrap.addEventListener("touchstart",e=>{ const t=e.touches[0]; sx=t.clientX; 
 gridWrap.addEventListener("touchend",e=>{
   if(cur>=FIRST_MOVE) return;
   const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
-  if(Math.abs(dx)>70&&Math.abs(dy)<50){ if(dx<0&&cur<4) goTo(cur+1); else if(dx>0&&cur>0) goTo(cur-1); }
+  if(Math.abs(dx)>70&&Math.abs(dy)<50){ if(dx<0&&cur<FIRST_MOVE-1) goTo(cur+1); else if(dx>0&&cur>0) goTo(cur-1); }
 },{passive:true});
 
 /* ===== 스트레칭 진행 ===== */
