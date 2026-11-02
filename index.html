@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>거북이 탈출 대작전</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: 엑셀 창 하나(제목줄·메뉴·수식줄·격자·시트탭·상태줄)를 폰 세로 크기로. 단일 라이트 테마(엑셀 화면). */
+:root{
+  --xl-green:#1E6B42;      /* 제목줄, 선택 셀 */
+  --xl-green-soft:#E4F0E8;
+  --navy:#1F3A68;          /* 버튼·포인트 */
+  --navy-soft:#E6EDF8;
+  --grid:#D6DAD8;
+  --head:#F2F4F3;
+  --ink:#1D2733;
+  --muted:#5F6B66;
+  --note:#FFF6C4;
+  --note-line:#D6C266;
+  --amber:#8A5A00;
+  --amber-soft:#FFF0D2;
+  --font:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;
+  color-scheme:light;
+}
+html{height:100%;box-sizing:border-box;background:#E9EDEA}
+*,*::before,*::after{box-sizing:border-box}
+body{height:100%;margin:0;background:#E9EDEA;color:var(--ink);font-family:var(--font);font-size:14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;
+  display:flex;justify-content:center}
+.app{width:100%;max-width:460px;height:100%;display:flex;flex-direction:column;background:#fff;border:1px solid #C9D0CC;box-shadow:0 6px 24px rgba(30,60,45,.12);overflow:hidden}
+button{font-family:inherit}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+
+/* 제목줄 */
+.titlebar{background:var(--xl-green);color:#fff;display:flex;align-items:center;gap:8px;padding:8px 10px;min-height:42px}
+.titlebar .fname{flex:1;min-width:0;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.snd{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:3px;padding:5px 8px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.snd[aria-pressed="true"]{background:#fff;color:var(--xl-green)}
+.snd svg{width:16px;height:16px}
+
+/* 메뉴 */
+.menu{display:flex;gap:14px;padding:6px 12px 0;border-bottom:1px solid var(--grid);font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden}
+.menu span{padding-bottom:5px}
+.menu .on{color:var(--xl-green);font-weight:700;border-bottom:2px solid var(--xl-green)}
+
+/* 수식줄 */
+.fbar{display:flex;align-items:stretch;border-bottom:1px solid var(--grid);font-size:13px;min-height:30px}
+.namebox{width:52px;flex:none;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--grid);font-variant-numeric:tabular-nums}
+.fx{width:30px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--muted);font-style:italic;border-right:1px solid var(--grid)}
+.formula{flex:1;min-width:0;display:flex;align-items:center;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Consolas,"D2Coding",var(--font)}
+
+/* 격자 */
+.gridwrap{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;background:#fff}
+table.grid{width:100%;border-collapse:collapse;table-layout:fixed}
+table.grid col.rh{width:30px}
+table.grid thead th{position:sticky;top:0;z-index:3;background:var(--head);color:var(--muted);font-weight:400;font-size:12px;height:22px;border:1px solid var(--grid)}
+table.grid tbody th{background:var(--head);color:var(--muted);font-weight:400;font-size:12px;border:1px solid var(--grid);font-variant-numeric:tabular-nums}
+table.grid td{border:1px solid var(--grid);padding:7px 8px;vertical-align:middle;line-height:1.45;word-break:keep-all;overflow-wrap:anywhere;position:relative}
+tr.empty td,tr.empty th{height:24px;padding:0}
+
+td.ttl{font-size:21px;font-weight:800;color:var(--xl-green);letter-spacing:-.3px;padding-block:10px;text-wrap:balance}
+td.sub{color:var(--muted);font-size:13.5px}
+td.lbl{background:var(--xl-green-soft);font-weight:700;color:#24513A;font-size:13px}
+td.hdr{background:var(--xl-green-soft);font-weight:700;color:#24513A;text-align:center;font-size:13px}
+td.c{text-align:center}
+td.small{font-size:12px;color:var(--muted)}
+td.btncell{padding:6px}
+td.num{text-align:center;font-variant-numeric:tabular-nums}
+td.pick{cursor:pointer}
+td.pick:hover{background:var(--navy-soft)}
+.kpi{font-size:24px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi small{font-size:13px;color:var(--muted);font-weight:700;margin-left:2px}
+.stamps{display:flex;justify-content:space-between;gap:4px;padding:4px 2px 2px}
+.stp{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px}
+.ring{width:38px;height:38px;max-width:100%;border-radius:50%;border:2px dashed #C9D0CC;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--navy);background:#fff}
+.stp.on .ring{border:3px double var(--navy);background:var(--navy-soft);transform:rotate(-8deg)}
+.stp.today .ring{box-shadow:0 0 0 2px var(--xl-green-soft)}
+.dl{font-size:12px;color:var(--muted)}
+.stp.today .dl{color:var(--xl-green);font-weight:800}
+.nexthint{font-size:12px;color:var(--muted);margin-left:6px}
+td.hl{background:var(--navy-soft);font-weight:700;color:var(--navy)}
+td.sel{outline:2px solid var(--xl-green);outline-offset:-2px}
+td.sel::after{content:"";position:absolute;right:-3px;bottom:-3px;width:6px;height:6px;background:var(--xl-green);border:1px solid #fff;z-index:2}
+td.cmt::before{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 8px 8px 0;border-color:transparent var(--navy) transparent transparent}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:42px;border-radius:2px;border:1px solid var(--navy);background:var(--navy);color:#fff;font-weight:700;font-size:14.5px;cursor:pointer;padding:6px 8px}
+.btn.sub{background:#fff;color:var(--navy)}
+.btn:active{transform:translateY(1px)}
+
+/* 차트 개체 */
+td.chart{padding:8px}
+.chartbox{position:relative;border:1px solid #B9C2BD;background:#fff;box-shadow:1px 1px 0 #E1E5E3;padding:6px 6px 2px}
+.chartbox .ctitle{font-size:11.5px;color:var(--muted);text-align:center}
+svg.turtle{display:block;width:100%;height:150px}
+.cap{font-size:12.5px;color:var(--muted);text-align:center;padding:2px 0 4px}
+
+/* 드롭다운·체크 */
+select.dd{width:100%;font:inherit;font-size:13.5px;border:1px solid #B9C2BD;border-radius:2px;background:#fff;padding:6px 4px;color:var(--ink)}
+.chk{display:flex;justify-content:center}
+.chk input{width:20px;height:20px;accent-color:var(--xl-green)}
+.chip{display:inline-block;padding:3px 8px;border-radius:2px;font-weight:700;font-size:13px}
+.chip.ok{background:var(--xl-green-soft);color:#1E6B35}
+.chip.warn{background:var(--amber-soft);color:var(--amber)}
+.chip.bad{background:#FBE3BE;color:#6E4300}
+.chip.none{background:var(--head);color:var(--muted);font-weight:400}
+
+input.ang{width:100%;accent-color:var(--navy)}
+
+/* 타이머 */
+td.cnt{text-align:center;height:92px;padding:4px}
+.big{font-size:56px;font-weight:800;color:var(--navy);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.big.prep{color:#8A96A3;font-size:44px}
+.big.txt{font-size:28px;letter-spacing:-.5px}
+.unit{font-size:15px;font-weight:700;color:var(--muted);margin-left:3px}
+td.st{text-align:center;font-weight:700;color:#24513A;background:var(--xl-green-soft);font-size:14px}
+.barwrap{height:16px;background:#F1F3F2;border:1px solid #DDE2DF;position:relative}
+.bar{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#3E68B0,#7FA2DC);transition:width .2s linear}
+.bar.grey{background:#C3CBD3}
+.note{position:absolute;right:6px;top:-30px;z-index:4;max-width:84%;background:var(--note);border:1px solid var(--note-line);box-shadow:2px 2px 0 rgba(0,0,0,.08);padding:5px 9px;font-size:13px;font-weight:700;color:#4A3D00;text-align:left;pointer-events:none}
+.note::after{content:"";position:absolute;left:14px;bottom:-7px;width:10px;height:10px;background:var(--note);border-right:1px solid var(--note-line);border-bottom:1px solid var(--note-line);transform:rotate(45deg)}
+.note.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+.note:empty{display:none}
+
+/* 도장 */
+.stamp{position:absolute;left:12px;top:22px;width:104px;height:104px;border:4px double var(--navy);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--navy);font-weight:900;font-size:19px;line-height:1.15;transform:rotate(-12deg);background:rgba(255,255,255,.75);animation:stamp .5s cubic-bezier(.2,1.4,.4,1) both}
+.stamp small{font-size:11px;font-weight:700;margin-top:3px}
+@keyframes stamp{0%{transform:scale(2.2) rotate(-12deg);opacity:0}100%{transform:scale(1) rotate(-12deg);opacity:1}}
+
+/* 시트 탭 */
+.tabbar{display:flex;flex:none;border-top:1px solid var(--grid);background:var(--head)}
+.tnav{flex:none;width:32px;border:0;border-right:1px solid var(--grid);background:var(--head);color:var(--muted);font-size:11px;cursor:pointer}
+.tnav:hover{background:#fff;color:var(--xl-green)}
+.tabs{position:relative;display:flex;align-items:stretch;background:var(--head);overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;scroll-behavior:smooth;cursor:grab}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:0;border-right:1px solid var(--grid);background:transparent;color:var(--muted);font-size:12.5px;padding:8px 11px;cursor:pointer;white-space:nowrap}
+.tab.on{background:#fff;color:var(--xl-green);font-weight:700;box-shadow:inset 0 -2px 0 var(--xl-green)}
+.tab.done{color:#2D7A4A}
+.tabs .plus{flex:none;padding:8px 12px;color:var(--muted)}
+
+/* 상태줄 */
+.status{display:flex;justify-content:space-between;gap:8px;padding:4px 10px;font-size:11.5px;color:var(--muted);background:#F7F8F7;border-top:1px solid var(--grid);font-variant-numeric:tabular-nums;flex:none}
+
+@media (prefers-reduced-motion:reduce){.stamp,.note.pop{animation:none}.bar{transition:none}}
+</style>
+</head>
+<body>
+
+
+<div class="app" id="app">
+  <div class="titlebar">
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="2" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M1 6.5h16M1 11.5h16M6.5 1v16" stroke="#fff" stroke-width="1.4"/></svg>
+    <div class="fname">3분기_업무보고_최종.xlsx</div>
+    <button class="snd" id="snd" aria-pressed="false" type="button"></button>
+  </div>
+  <div class="menu" aria-hidden="true"><span>파일</span><span class="on">홈</span><span>삽입</span><span>수식</span><span>데이터</span><span>검토</span><span>보기</span></div>
+  <div class="fbar">
+    <div class="namebox" id="nameBox">A1</div>
+    <div class="fx">fx</div>
+    <div class="formula" id="formula"></div>
+  </div>
+  <div class="gridwrap" id="gridWrap"></div>
+  <div class="tabbar"><button class="tnav" id="tPrev" type="button" aria-label="시트 탭 왼쪽으로">◀</button><button class="tnav" id="tNext" type="button" aria-label="시트 탭 오른쪽으로">▶</button><div class="tabs" id="tabs" role="tablist"></div></div>
+  <div class="status"><span id="stLeft">준비</span><span id="stRight">진행 0/5 · 100%</span></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===== 동작 (질병관리청 국가건강정보포털 「일자목(거북목)증후군」 기준) ===== */
+const MOVES=[
+ {key:"tuck", tab:"턱당기기", name:"턱 당기기", meta:"30초 × 2회", sets:2, hold:30,
+  formula:"=턱당기기(30초, 2회)", how:"시선은 정면 그대로, 턱을 목 쪽으로 당기면서 머리를 뒤로 쏙 밀어요. 그 자세로 30초 버텨요.",
+  point:"고개를 숙이지 않아요! 이중턱이 생기면 잘하고 있는 거예요", basis:"질병관리청 「일자목(거북목)증후군」, 2026년", hint:"← 턱을 뒤로 쏙!"},
+ {key:"back", tab:"목뒤", name:"목 뒤 늘리기", meta:"30초", sets:1, hold:30,
+  formula:"=목뒤늘리기(30초)", how:"고개를 천천히 앞으로 숙여 목 뒤쪽을 늘려요.",
+  point:"가볍게 늘어나는 느낌까지만!", basis:"질병관리청 「일자목(거북목)증후군」, 2026년", hint:"↓ 천천히 숙이기"},
+ {key:"front", tab:"목앞", name:"목 앞 늘리기", meta:"30초", sets:1, hold:30,
+  formula:"=목앞늘리기(30초)", how:"허리를 펴고 고개를 천천히 뒤로 젖혀 목 앞쪽을 늘려요.",
+  point:"아프면 젖히는 각도를 줄여요!", basis:"질병관리청 「일자목(거북목)증후군」, 2026년", hint:"↑ 천천히 젖히기"},
+ {key:"blade", tab:"날개뼈", name:"날개뼈 모으기", meta:"30초 × 2회", sets:2, hold:30,
+  formula:"=날개뼈모으기(30초, 2회)", how:"가슴을 펴고 양쪽 어깨를 뒤로 당겨, 등 뒤 날개뼈끼리 가까워지게 모아요. 그 자세로 30초 버텨요.",
+  point:"어깨가 귀 쪽으로 올라가지 않게!", basis:"질병관리청 「일자목(거북목)증후군」, 2026년", hint:"어깨를 뒤로 쫙!", front:true},
+ {key:"roll", tab:"목돌리기", name:"목 천천히 돌리기", meta:"시계 5회 + 반시계 5회", roll:true, reps:5, per:4,
+  formula:"=목돌리기(시계 5회, 반시계 5회)", how:"목을 천천히 크게 돌려요. 시계 방향 5번, 반대 방향 5번이에요.",
+  point:"빠르게 돌리지 말고 천천히!", basis:"질병관리청 「일자목(거북목)증후군」, 2026년", hint:"", front:true}
+];
+const SHEETS=["표지","자가진단","머리무게","바른자세","약속"].concat(MOVES.map(m=>m.tab)).concat(["자가체크","완료"]);
+const FIRST_MOVE=5, DONE_SHEET=SHEETS.length-1, CHECK_SHEET=SHEETS.length-2;
+const SRC="출처: 질병관리청 「일자목(거북목)증후군」, 2026년";
+
+const $=id=>document.getElementById(id);
+const gridWrap=$("gridWrap"), tabsEl=$("tabs");
+let cur=0, run=null, doneMoves=new Set(), sessionStart=0, wakeLock=null;
+
+/* ===== 소리 (코드로 만든 오르골 음악 + 효과음) ===== */
+let ctx=null, master=null, musicGain=null, soundOn=false, musicTimer=null, nextNoteTime=0, step=0;
+const STEP=0.3125; // 96bpm 8분음표
+const MEL=[76,-1,79,-1,81,79,76,-1, 72,-1,76,-1,74,72,69,-1, 72,74,76,-1,81,-1,79,76, 74,-1,79,-1,74,72,74,-1];
+const BASS=[48,45,41,43];
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+function ensureCtx(){
+  if(ctx) return true;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+    ctx=new AC(); master=ctx.createGain(); master.gain.value=0; master.connect(ctx.destination);
+    musicGain=ctx.createGain(); musicGain.gain.value=0.5; musicGain.connect(master);
+    return true;
+  }catch(e){ctx=null;return false}
+}
+function voice(freq,t,dur,vol,type,dest){
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type=type; o.frequency.value=freq;
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.012); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(dest); o.start(t); o.stop(t+dur+0.05);
+}
+function schedule(){
+  if(!ctx) return;
+  while(nextNoteTime<ctx.currentTime+0.25){
+    const n=MEL[step%MEL.length];
+    if(n>0){ voice(mtof(n),nextNoteTime,0.7,0.09,"sine",musicGain); voice(mtof(n+12),nextNoteTime,0.35,0.025,"triangle",musicGain); }
+    if(step%4===0){ voice(mtof(BASS[Math.floor(step/8)%4]),nextNoteTime,1.1,0.07,"sine",musicGain); }
+    nextNoteTime+=STEP; step++;
+  }
+}
+function startMusic(){ if(!ctx||musicTimer) return; nextNoteTime=ctx.currentTime+0.08; musicTimer=setInterval(schedule,60); }
+function stopMusic(){ if(musicTimer){clearInterval(musicTimer);musicTimer=null} }
+function setSound(on){
+  soundOn=on;
+  if(on){
+    if(!ensureCtx()){soundOn=false;}
+    else{ try{ctx.resume()}catch(e){} master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(0.9,ctx.currentTime,0.05); startMusic(); }
+  }else if(ctx){ master.gain.setTargetAtTime(0,ctx.currentTime,0.05); setTimeout(()=>{ if(!soundOn) stopMusic(); },300); }
+  paintSound();
+}
+function duck(low){ if(ctx&&musicGain) musicGain.gain.setTargetAtTime(low?0.12:0.5,ctx.currentTime,0.1); }
+function sfx(kind){
+  if(!soundOn||!ctx) return;
+  const t=ctx.currentTime+0.01;
+  if(kind==="tick") voice(1000,t,0.08,0.2,"sine",master);
+  if(kind==="soft") voice(784,t,0.12,0.12,"sine",master);
+  if(kind==="ding"){ voice(1046.5,t,0.5,0.22,"triangle",master); voice(1318.5,t+0.14,0.7,0.22,"triangle",master); }
+  if(kind==="fanfare"){ [523.25,659.25,783.99,1046.5].forEach((f,i)=>voice(f,t+i*0.13,0.6,0.2,"triangle",master)); [523.25,659.25,783.99].forEach(f=>voice(f,t+0.6,1.4,0.12,"sine",master)); }
+}
+function buzz(){ try{ navigator.vibrate&&navigator.vibrate(160) }catch(e){} }
+const SPK_OFF='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z" fill="currentColor"/><path d="M11 6l4 4M15 6l-4 4" stroke="currentColor" stroke-width="1.5"/></svg>';
+const SPK_ON='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z" fill="currentColor"/><path d="M11 5.5q2 2.5 0 5M13 4q3.5 4 0 8" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>';
+function paintSound(){
+  const b=$("snd"); b.setAttribute("aria-pressed",String(soundOn)); b.innerHTML=(soundOn?SPK_ON:SPK_OFF)+(soundOn?"소리 켜짐":"소리 꺼짐");
+  const b2=$("snd2"); if(b2) b2.textContent=soundOn?"소리 끄기":"소리 켜기";
+}
+$("snd").addEventListener("click",()=>setSound(!soundOn));
+
+/* ===== 화면 꺼짐 방지 ===== */
+async function lockScreen(){ try{ if("wakeLock" in navigator){ wakeLock=await navigator.wakeLock.request("screen"); } }catch(e){wakeLock=null} }
+function unlockScreen(){ try{ wakeLock&&wakeLock.release(); }catch(e){} wakeLock=null; }
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&run) lockScreen(); });
+
+/* ===== 거북이 ===== */
+const T={tk:0, n:1, act:"none", angle:0, rollAngle:0, hx:222, hy:92, rot:0, arm:0, hint:""};
+function turtleSVG(extra){
+  return '<svg class="turtle" viewBox="0 0 260 150" role="img" aria-label="안경 쓴 초록 거북이">'
+  +'<ellipse cx="118" cy="138" rx="84" ry="6" fill="#E2E8E1"/>'
+  +'<path d="M46 114 L28 124 L48 124 Z" fill="#8CCF6A" stroke="#5E9E45" stroke-width="2" stroke-linejoin="round"/>'
+  +'<ellipse cx="74" cy="127" rx="15" ry="10" fill="#8CCF6A" stroke="#5E9E45" stroke-width="2"/>'
+  +'<g id="tArm"><ellipse cx="152" cy="127" rx="15" ry="10" fill="#8CCF6A" stroke="#5E9E45" stroke-width="2"/></g>'
+  +'<line id="tNeckO" x1="164" y1="100" x2="210" y2="90" stroke="#5E9E45" stroke-width="27" stroke-linecap="round"/>'
+  +'<line id="tNeck" x1="164" y1="100" x2="210" y2="90" stroke="#8CCF6A" stroke-width="22" stroke-linecap="round"/>'
+  +'<path d="M46 116 Q46 44 112 42 Q178 44 178 116 Z" fill="#4E9F4C" stroke="#2F6F33" stroke-width="3" stroke-linejoin="round"/>'
+  +'<path d="M95 60 L129 60 L141 83 L129 106 L95 106 L83 83 Z" fill="#6DBA5E" stroke="#2F6F33" stroke-width="2" stroke-linejoin="round"/>'
+  +'<path d="M54 104 Q55 80 70 64 L79 83 L71 106 Z" fill="#6DBA5E" stroke="#2F6F33" stroke-width="2" stroke-linejoin="round"/>'
+  +'<path d="M170 104 Q169 80 154 64 L145 83 L153 106 Z" fill="#6DBA5E" stroke="#2F6F33" stroke-width="2" stroke-linejoin="round"/>'
+  +'<rect x="40" y="108" width="144" height="14" rx="7" fill="#F2D98A" stroke="#C9A94A" stroke-width="2"/>'
+  +'<g id="tHead" transform="translate(222 92)">'
+  +  '<circle r="25" fill="#8CCF6A" stroke="#5E9E45" stroke-width="2.5"/>'
+  +  '<circle cx="9" cy="-6" r="7" fill="#fff"/><circle cx="11" cy="-6" r="3.6" fill="#1C2B3A"/><circle cx="12.4" cy="-7.6" r="1.2" fill="#fff"/>'
+  +  '<circle cx="9" cy="-6" r="10.5" fill="none" stroke="#1F3A68" stroke-width="2.4"/>'
+  +  '<line x1="-1.5" y1="-7.5" x2="-15" y2="-11" stroke="#1F3A68" stroke-width="2.4" stroke-linecap="round"/>'
+  +  '<path d="M8 10 Q15 15 21 8" fill="none" stroke="#2F5E2A" stroke-width="2.2" stroke-linecap="round"/>'
+  +  '<circle cx="22.5" cy="-0.5" r="1.3" fill="#2F5E2A"/>'
+  +  '<path id="tChin" d="M3 19 Q11 24 19 17" fill="none" stroke="#4F8C3A" stroke-width="2" stroke-linecap="round" opacity="0"/>'
+  +'</g>'
+  +'<text id="tHint" x="112" y="26" text-anchor="middle" font-size="16" font-weight="800" fill="#1F3A68" font-family="Malgun Gothic,Apple SD Gothic Neo,sans-serif"></text>'
+  +(extra||"")+'</svg>';
+}
+function headTarget(){
+  let hx=178+44*T.n, hy=50+42*T.n, rot=0, arm=0;
+  switch(T.act){
+    case "tuck": hx-=20; hy-=3; rot=9; break;
+    case "back": hx+=4; hy+=10; rot=40; break;
+    case "front": hx-=6; hy-=4; rot=-32; break;
+    case "blade": arm=-32; hx-=4; hy-=4; break;
+    case "roll": { const a=T.rollAngle; hx+=11*Math.cos(a); hy+=11*Math.sin(a); rot=12*Math.sin(a); break; }
+    case "upright": hx=178; hy=50; rot=0; break;
+    case "weight": hx+=T.angle*0.22; hy+=T.angle*0.42; rot=T.angle; break;
+  }
+  return {hx,hy,rot,arm};
+}
+/* 앞모습 거북이 (날개뼈 모으기, 목 돌리기용) */
+const SKIN='fill="#8CCF6A" stroke="#5E9E45" stroke-width="2"';
+function turtleFrontSVG(extra,wrapT){
+  return '<svg class="turtle" viewBox="0 0 260 150" role="img" aria-label="정면을 보는 안경 쓴 초록 거북이">'
+  +'<defs><marker id="ah" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1F3A68"/></marker></defs>'
+  +'<g transform="'+(wrapT||"")+'"><ellipse cx="130" cy="141" rx="72" ry="6" fill="#E2E8E1"/>'
+  +'<ellipse cx="108" cy="134" rx="14" ry="9" '+SKIN+'/><ellipse cx="152" cy="134" rx="14" ry="9" '+SKIN+'/>'
+  +'<ellipse cx="130" cy="102" rx="60" ry="40" fill="#4E9F4C" stroke="#2F6F33" stroke-width="3"/>'
+  +'<g id="fArmL"><ellipse cx="78" cy="110" rx="11" ry="21" transform="rotate(28 78 110)" '+SKIN+'/></g>'
+  +'<g id="fArmR"><ellipse cx="182" cy="110" rx="11" ry="21" transform="rotate(-28 182 110)" '+SKIN+'/></g>'
+  +'<g id="fChest"><ellipse cx="130" cy="106" rx="40" ry="34" fill="#F2D98A" stroke="#C9A94A" stroke-width="2"/>'
+  +  '<path d="M103 94 H157 M97 110 H163 M104 126 H156 M130 74 V139" stroke="#D6B75A" stroke-width="2" fill="none"/></g>'
+  +'<line id="fNeckO" x1="130" y1="84" x2="130" y2="62" stroke="#5E9E45" stroke-width="27" stroke-linecap="round"/>'
+  +'<line id="fNeck" x1="130" y1="84" x2="130" y2="62" stroke="#8CCF6A" stroke-width="22" stroke-linecap="round"/>'
+  +'<g id="fHead" transform="translate(130 46)">'
+  +  '<circle r="27" fill="#8CCF6A" stroke="#5E9E45" stroke-width="2.5"/>'
+  +  '<circle cx="-11" cy="-4" r="6.5" fill="#fff"/><circle cx="11" cy="-4" r="6.5" fill="#fff"/>'
+  +  '<circle cx="-10" cy="-3.5" r="3.4" fill="#1C2B3A"/><circle cx="12" cy="-3.5" r="3.4" fill="#1C2B3A"/>'
+  +  '<circle cx="-11" cy="-4" r="9.5" fill="none" stroke="#1F3A68" stroke-width="2.4"/><circle cx="11" cy="-4" r="9.5" fill="none" stroke="#1F3A68" stroke-width="2.4"/>'
+  +  '<line x1="-1.5" y1="-5" x2="1.5" y2="-5" stroke="#1F3A68" stroke-width="2.4"/>'
+  +  '<path d="M-8 12 Q0 18 8 12" fill="none" stroke="#2F5E2A" stroke-width="2.2" stroke-linecap="round"/>'
+  +'</g>'
+  +'</g><text id="tHint" x="56" y="26" text-anchor="middle" font-size="15" font-weight="800" fill="#1F3A68" font-family="Malgun Gothic,Apple SD Gothic Neo,sans-serif"></text>'
+  +(extra||"")+'</svg>';
+}
+/* 동작별 안내 그림 */
+function guideArt(key,n){
+  const nx=178+44*n, ny=50+42*n, A=' fill="none" stroke="#1F3A68" stroke-width="2.6" stroke-linecap="round" marker-end="url(#ah)"';
+  const defs='<defs><marker id="ah" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1F3A68"/></marker></defs>';
+  const ghost='<circle cx="'+nx+'" cy="'+ny+'" r="25" fill="none" stroke="#8A96A3" stroke-width="2" stroke-dasharray="5 4"/>';
+  if(key==="tuck") return defs+ghost+'<path d="M'+(nx+12)+' '+(ny-36)+' H'+(nx-20)+'"'+A+'/>';
+  if(key==="back") return defs+ghost+'<path d="M'+(nx+22)+' '+(ny-28)+' Q'+(nx+40)+' '+(ny-6)+' '+(nx+28)+' '+(ny+20)+'"'+A+'/>';
+  if(key==="front") return defs+ghost+'<path d="M'+(nx+28)+' '+(ny+10)+' Q'+(nx+40)+' '+(ny-16)+' '+(nx+14)+' '+(ny-34)+'"'+A+'/>';
+  if(key==="blade") return '<path d="M39 78 Q26 71 17 80"'+A+'/><path d="M139 78 Q152 71 161 80"'+A+'/>'+'<rect x="170" y="20" width="84" height="114" rx="6" fill="#F7FAFF" stroke="#1F3A68" stroke-width="1.5" stroke-dasharray="4 3"/>'+'<text x="212" y="35" text-anchor="middle" font-size="11" font-weight="700" fill="#1F3A68">등 뒤에서 보면</text>'+'<ellipse cx="212" cy="80" rx="30" ry="34" fill="#4E9F4C" stroke="#2F6F33" stroke-width="2"/>'+'<line x1="212" y1="50" x2="212" y2="110" stroke="#2F6F33" stroke-width="2" stroke-dasharray="3 3"/>'+'<g id="sL"><path d="M188 62 L204 60 L200 90 Z" fill="#F2D98A" stroke="#C9A94A" stroke-width="1.5" stroke-linejoin="round"/></g>'+'<g id="sR"><path d="M236 62 L220 60 L224 90 Z" fill="#F2D98A" stroke="#C9A94A" stroke-width="1.5" stroke-linejoin="round"/></g>'+'<text x="212" y="128" text-anchor="middle" font-size="11" font-weight="800" fill="#1F3A68">→ 쏙 모아요 ←</text>';
+  if(key==="roll") return '<circle cx="130" cy="46" r="40" fill="none" stroke="#7F9CCF" stroke-width="2" stroke-dasharray="4 5"/><polygon id="fArrow" points="140,6 128,0 128,12" fill="#1F3A68"/>';
+  return "";
+}
+function setRollArrow(dir){ const a=$("fArrow"); if(a) a.setAttribute("points",dir>0?"140,6 128,0 128,12":"120,6 132,0 132,12"); }
+function frontTarget(){
+  let hx=130, hy=46, rot=0, arm=0;
+  if(T.act==="roll"){ const a=T.rollAngle; hx+=12*Math.cos(a); hy+=10*Math.sin(a)+2; rot=18*Math.cos(a); }
+  if(T.act==="blade"){ arm=32; hy-=3; }
+  return {hx,hy,rot,arm};
+}
+function drawTurtle(dt){
+  const front=!!$("fHead"), head=front?$("fHead"):$("tHead"); if(!head) return;
+  const tg=front?frontTarget():headTarget(), k=dt==null?1:1-Math.exp(-dt*7);
+  T.hx+=(tg.hx-T.hx)*k; T.hy+=(tg.hy-T.hy)*k; T.rot+=(tg.rot-T.rot)*k; T.arm+=(tg.arm-T.arm)*k; T.tk+=((T.act==="tuck"?1:0)-T.tk)*k;
+  head.setAttribute("transform",`translate(${T.hx.toFixed(1)} ${T.hy.toFixed(1)}) rotate(${T.rot.toFixed(1)})`);
+  if(front){
+    ["fNeck","fNeckO"].forEach(id=>{const l=$(id); l.setAttribute("x2",T.hx.toFixed(1)); l.setAttribute("y2",(T.hy+16).toFixed(1));});
+    $("fArmL").setAttribute("transform",`rotate(${T.arm.toFixed(1)} 90 92)`);
+    $("fArmR").setAttribute("transform",`rotate(${(-T.arm).toFixed(1)} 170 92)`);
+    const sl=$("sL"), sr=$("sR"); if(sl&&sr){ const d=T.arm/32*4; sl.setAttribute("transform","translate("+d.toFixed(1)+" 0)"); sr.setAttribute("transform","translate("+(-d).toFixed(1)+" 0)"); }
+    const s=(1+T.arm/32*0.05).toFixed(3); $("fChest").setAttribute("transform",`translate(130 106) scale(${s}) translate(-130 -106)`);
+  }else{
+    const nx=(T.hx-9).toFixed(1), ny=(T.hy+7).toFixed(1);
+    ["tNeck","tNeckO"].forEach(id=>{const l=$(id); l.setAttribute("x2",nx); l.setAttribute("y2",ny);});
+    $("tArm").setAttribute("transform",`rotate(${T.arm.toFixed(1)} 140 120)`);
+    const c=$("tChin"); if(c) c.setAttribute("opacity",T.tk.toFixed(2));
+  }
+  const h=$("tHint"); if(h&&h.textContent!==T.hint) h.textContent=T.hint;
+}
+function snapTurtle(){ const tg=$("fHead")?frontTarget():headTarget(); T.hx=tg.hx;T.hy=tg.hy;T.rot=tg.rot;T.arm=tg.arm; drawTurtle(null); }
+
+/* ===== 나의 탈출 기록 (이 기기 브라우저에 저장) ===== */
+const LOG_KEY="turtleEscapeLog_v1";
+const storageOK=(()=>{ try{ localStorage.setItem("__te","1"); localStorage.removeItem("__te"); return true; }catch(e){ return false; } })();
+function loadLog(){ try{ const v=JSON.parse(localStorage.getItem(LOG_KEY)||"[]"); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+function saveLog(a){ try{ localStorage.setItem(LOG_KEY,JSON.stringify(a)); return true; }catch(e){ return false; } }
+let curRec=null, lastAward=null;
+const TITLES=[[1,"아기 거북이"],[5,"탈출 연습생"],[10,"바른 자세 지킴이"],[20,"거북목 탈출 마스터"]];
+function titleFor(n){ let t=null; TITLES.forEach(x=>{ if(n>=x[0]) t=x[1]; }); return t; }
+function nextTitle(n){ return TITLES.find(x=>n<x[0])||null; }
+const WD="일월화수목금토";
+const dayKey=d=>d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+const pad=n=>String(n).padStart(2,"0");
+const fmtT=t=>{ const d=new Date(t); return (d.getMonth()+1)+"/"+d.getDate()+"("+WD[d.getDay()]+") "+pad(d.getHours())+":"+pad(d.getMinutes()); };
+function stats(log){
+  const now=new Date(), today=new Date(now.getFullYear(),now.getMonth(),now.getDate()), counts={};
+  log.forEach(r=>{ const k=dayKey(new Date(r.t)); counts[k]=(counts[k]||0)+1; });
+  const mon=new Date(today); mon.setDate(today.getDate()-((today.getDay()+6)%7));
+  const week=[0,1,2,3,4,5,6].map(i=>{ const d=new Date(mon); d.setDate(mon.getDate()+i); return {d:d, n:counts[dayKey(d)]||0, today:dayKey(d)===dayKey(today)}; });
+  const last7=[0,1,2,3,4,5,6].map(i=>{ const d=new Date(today); d.setDate(today.getDate()-6+i); return {d:d, n:counts[dayKey(d)]||0}; });
+  let streak=0; const d=new Date(today); if(!counts[dayKey(d)]) d.setDate(d.getDate()-1);
+  while(counts[dayKey(d)]){ streak++; d.setDate(d.getDate()-1); }
+  return {total:log.length, weekN:week.reduce((s,x)=>s+x.n,0), week:week, last7:last7, streak:streak, todayN:counts[dayKey(today)]||0};
+}
+function recordSession(){
+  if(!storageOK) return null;
+  const log=loadLog(), before=titleFor(log.length), rec={t:Date.now(), moves:5, score:null, feel:""};
+  log.push(rec); if(log.length>1000) log.splice(0,log.length-1000);
+  if(!saveLog(log)) return null;
+  const after=titleFor(log.length); lastAward=(after&&after!==before)?after:null;
+  return rec.t;
+}
+function updateRec(id,patch){ if(!id) return; const log=loadLog(), r=log.find(x=>x.t===id); if(!r) return; Object.assign(r,patch); saveLog(log); }
+function barChart(last7){
+  const max=Math.max(3,...last7.map(x=>x.n)), H=124, top=16, bot=24, ch=H-top-bot, step=272/7, bw=24; let g="";
+  const tick=max>6?2:1;
+  for(let i=0;i<=max;i+=tick){ const y=(top+ch-ch*i/max).toFixed(1); g+='<line x1="24" x2="296" y1="'+y+'" y2="'+y+'" stroke="#E3E7E5"/><text x="18" y="'+(+y+4)+'" text-anchor="end" font-size="10" fill="#5F6B66">'+i+'</text>'; }
+  last7.forEach((x,i)=>{
+    const h=ch*x.n/max, X=24+step*i+(step-bw)/2, Y=top+ch-h, isT=i===6;
+    if(x.n) g+='<rect x="'+X.toFixed(1)+'" y="'+Y.toFixed(1)+'" width="'+bw+'" height="'+h.toFixed(1)+'" fill="'+(isT?"#1F3A68":"#7FA2DC")+'"/><text x="'+(X+bw/2).toFixed(1)+'" y="'+(Y-4).toFixed(1)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#1F3A68">'+x.n+'</text>';
+    g+='<text x="'+(X+bw/2).toFixed(1)+'" y="'+(H-7)+'" text-anchor="middle" font-size="10" fill="'+(isT?"#1E6B42":"#5F6B66")+'" font-weight="'+(isT?800:400)+'">'+(isT?"오늘":(x.d.getMonth()+1)+"/"+x.d.getDate())+'</text>';
+  });
+  return '<svg viewBox="0 0 300 124" style="display:block;width:100%;height:auto" role="img" aria-label="최근 7일 스트레칭 횟수" font-family="Malgun Gothic,Apple SD Gothic Neo,sans-serif">'+g+'</svg>';
+}
+function recordRows(){
+  if(!storageOK) return [[cell("이 브라우저에서는 기록을 저장할 수 없어요. 시크릿 모드라면 일반 창으로 열어 주세요.",{s:6,c:"small"})]];
+  const log=loadLog(), s=stats(log), cur=titleFor(s.total), nx=nextTitle(s.total);
+  const titleHtml=(cur?'<span class="chip ok">'+cur+'</span>':'<span class="chip none">아직 칭호가 없어요</span>')
+    +'<span class="nexthint">'+(nx?nx[1]+"까지 "+(nx[0]-s.total)+"회":"최고 칭호 달성!")+'</span>';
+  const stamps='<div class="chartbox"><div class="ctitle">이번 주 도장판</div><div class="stamps">'
+    +s.week.map(w=>'<div class="stp'+(w.n?" on":"")+(w.today?" today":"")+'"><div class="ring">'+(w.n?(w.n>1?"×"+w.n:"탈출"):"")+'</div><div class="dl">'+(w.today?"오늘":WD[w.d.getDay()])+'</div></div>').join("")+'</div></div>';
+  const rows=[
+   [cell("나의 탈출 기록",{s:6,c:"hdr"})],
+   [cell("칭호",{s:2,c:"lbl"}),cell(titleHtml,{s:4})],
+   [cell("총 횟수",{s:2,c:"hdr"}),cell("이번 주",{s:2,c:"hdr"}),cell("연속",{s:2,c:"hdr"})],
+   [cell('<span class="kpi">'+s.total+'<small>회</small></span>',{s:2,c:"c"}),cell('<span class="kpi">'+s.weekN+'<small>회</small></span>',{s:2,c:"c"}),cell('<span class="kpi">'+s.streak+'<small>일째</small></span>',{s:2,c:"c"})],
+   [cell(stamps,{s:6,c:"chart"})],
+   [cell('<div class="chartbox"><div class="ctitle">차트 · 최근 7일 스트레칭 횟수</div>'+barChart(s.last7)+'</div>',{s:6,c:"chart"})],
+   [cell("날짜·시간",{s:2,c:"hdr"}),cell("동작",{c:"hdr"}),cell("체크",{c:"hdr"}),cell("느낌",{s:2,c:"hdr"})]
+  ];
+  const recent=log.slice(-5).reverse();
+  if(!recent.length) rows.push([cell("아직 기록이 없어요. 5가지 동작을 모두 끝내면 첫 도장이 찍혀요!",{s:6,c:"small"})]);
+  recent.forEach(r=>rows.push([cell(fmtT(r.t),{s:2,c:"num"}),cell((r.moves||5)+"/5",{c:"num"}),cell(r.score==null?"-":r.score+"/5",{c:"num"}),cell(r.feel||"-",{s:2,c:"c"})]));
+  rows.push([cell("기록은 이 기기의 브라우저에만 저장돼요.",{s:4,c:"small"}),cell('<button class="btn sub" type="button" id="logReset">기록 지우기</button>',{s:2,c:"btncell"})]);
+  return rows;
+}
+
+/* ===== 시트 그리기 ===== */
+function cell(h,o){ o=o||{}; return {h:h, s:o.s||1, c:o.c||"", id:o.id||""}; }
+function sheetHTML(rows,total){
+  let h='<table class="grid"><colgroup><col class="rh">'+'<col>'.repeat(6)+'</colgroup><thead><tr><th></th>'
+    +"ABCDEF".split("").map(c=>"<th>"+c+"</th>").join("")+'</tr></thead><tbody>';
+  rows.forEach((cells,r)=>{
+    h+="<tr><th>"+(r+1)+"</th>"+cells.map(c=>'<td colspan="'+c.s+'"'+(c.c?' class="'+c.c+'"':"")+(c.id?' id="'+c.id+'"':"")+">"+c.h+"</td>").join("")+"</tr>";
+  });
+  for(let r=rows.length;r<(total||rows.length+8);r++) h+='<tr class="empty"><th>'+(r+1)+"</th>"+"<td></td>".repeat(6)+"</tr>";
+  return h+"</tbody></table>";
+}
+const chart=(title,svg,cap)=>'<div class="chartbox"><div class="ctitle">'+title+'</div>'+svg+(cap?'<div class="cap">'+cap+'</div>':"")+'</div>';
+const navRow=(prev,next,nextLabel)=>[cell('<button class="btn sub" type="button" data-go="'+prev+'">◀ 이전</button>',{s:3,c:"btncell"}),cell('<button class="btn" type="button" data-go="'+next+'">'+(nextLabel||"다음 ▶")+'</button>',{s:3,c:"btncell"})];
+
+function setBar(name,formula){ $("nameBox").textContent=name; $("formula").textContent=formula; }
+function setStatus(left){ $("stLeft").textContent=left; $("stRight").textContent="진행 "+doneMoves.size+"/5 · 100%"; }
+
+function renderTabs(){
+  tabsEl.innerHTML=SHEETS.map((s,i)=>{
+    const isMove=i>=FIRST_MOVE&&i<CHECK_SHEET, done=isMove&&doneMoves.has(i-FIRST_MOVE);
+    return '<button class="tab'+(i===cur?" on":"")+(done?" done":"")+'" type="button" role="tab" aria-selected="'+(i===cur)+'" data-i="'+i+'">'+(done?"✓ ":"")+s+"</button>";
+  }).join("")+'<span class="plus" aria-hidden="true">+</span>';
+  const on=tabsEl.querySelector(".tab.on");
+  if(on){ const l=on.offsetLeft, r=l+on.offsetWidth; if(l<tabsEl.scrollLeft) tabsEl.scrollLeft=l-20; else if(r>tabsEl.scrollLeft+tabsEl.clientWidth) tabsEl.scrollLeft=r-tabsEl.clientWidth+20; }
+}
+let dragX=null, dragS=0, dragged=false;
+tabsEl.addEventListener("click",e=>{ if(dragged){dragged=false;return;} const b=e.target.closest(".tab"); if(b) goTo(+b.dataset.i); });
+$("tPrev").addEventListener("click",()=>{ tabsEl.scrollLeft-=150; });
+$("tNext").addEventListener("click",()=>{ tabsEl.scrollLeft+=150; });
+tabsEl.addEventListener("wheel",e=>{ if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){ tabsEl.scrollLeft+=e.deltaY; e.preventDefault(); } },{passive:false});
+tabsEl.addEventListener("pointerdown",e=>{ if(e.pointerType!=="mouse") return; dragX=e.clientX; dragS=tabsEl.scrollLeft; dragged=false; });
+window.addEventListener("pointermove",e=>{ if(dragX===null) return; const d=e.clientX-dragX; if(Math.abs(d)>5) dragged=true; if(dragged){ tabsEl.style.scrollBehavior="auto"; tabsEl.scrollLeft=dragS-d; } });
+window.addEventListener("pointerup",()=>{ dragX=null; tabsEl.style.scrollBehavior=""; });
+
+function goTo(i,opts){
+  opts=opts||{};
+  if(run&&!opts.keepRun){ run=null; unlockScreen(); duck(false); }
+  cur=i; T.hint=""; T.act="none";
+  if(i<FIRST_MOVE) T.n=(i===3)?0:1;
+  else if(i<CHECK_SHEET) T.n=1-(i-FIRST_MOVE)/5;
+  else T.n=0;
+  const r=RENDER[i<FIRST_MOVE?i:(i<CHECK_SHEET?"move":(i===CHECK_SHEET?"check":"done"))];
+  r(i);
+  gridWrap.scrollTop=0;
+  renderTabs(); snapTurtle();
+}
+
+function doneMsg(){
+  if(!curRec) return '<span class="small" style="color:#5F6B66">5가지 동작을 모두 끝내면 기록에 남아요.</span>';
+  const s=stats(loadLog());
+  return '<b>오늘 '+s.todayN+'번째 탈출!</b> 누적 '+s.total+'회 · 연속 '+s.streak+'일째'+(lastAward?' <span class="chip ok">새 칭호 획득: '+lastAward+'!</span>':'');
+}
+const RENDER={
+ 0(){ // 표지
+  gridWrap.innerHTML=sheetHTML([
+   [cell("거북이 탈출 대작전",{s:6,c:"ttl"})],
+   [cell("사무직 종사자를 위한 10분 바른 자세와 스트레칭",{s:6,c:"sub"})],
+   [cell('<button class="btn" type="button" data-go="1">처음부터 시작 ▶</button>',{s:3,c:"btncell"}),cell('<button class="btn sub" type="button" data-go="4">바로 스트레칭</button>',{s:3,c:"btncell"})],
+   [cell("통증이 심하거나 저림이 있으면 멈추고 전문가와 상담하세요.",{s:6,c:"small"})],
+   ...recordRows(),
+   [cell(chart("차트 1",turtleSVG(),"목이 쭉 나온 거북이를 구해 주세요!"),{s:6,c:"chart"})],
+   [cell("대상",{s:2,c:"lbl"}),cell("오래 앉아서 일하는 사무직 종사자",{s:4})],
+   [cell("소요 시간",{s:2,c:"lbl"}),cell("약 10분 (스트레칭만 약 5분)",{s:4})],
+   [cell("구성",{s:2,c:"lbl"}),cell("거북목 체크 → 바른 자세 → 목·어깨 스트레칭 5가지",{s:4})],
+   [cell("준비물",{s:2,c:"lbl"}),cell("의자, 휴대폰(또는 PC)",{s:4})],
+   [cell("소리",{s:2,c:"lbl"}),cell('<button class="btn sub" type="button" id="snd2"></button>',{s:2,c:"btncell"}),cell("이어폰이 있으면 켜 보세요",{s:2,c:"small"})],
+   [cell(SRC,{s:6,c:"small"})]
+  ],18);
+  $("snd2").addEventListener("click",()=>setSound(!soundOn)); paintSound();
+  const rb=$("logReset");
+  if(rb) rb.addEventListener("click",()=>{ if(rb.dataset.arm){ saveLog([]); goTo(0); } else { rb.dataset.arm="1"; rb.textContent="한 번 더 누르면 지워져요"; } });
+  setBar("A1","=거북이탈출대작전()"); setStatus("준비");
+ },
+ 1(){ // 자가진단
+  T.n=1;
+  const lines='<line x1="166" y1="34" x2="166" y2="134" stroke="#1F3A68" stroke-width="2" stroke-dasharray="5 4"/>'
+   +'<line x1="211" y1="34" x2="211" y2="134" stroke="#1F3A68" stroke-width="2" stroke-dasharray="5 4"/>'
+   +'<text x="166" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#1F3A68">어깨</text>'
+   +'<text x="211" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#1F3A68">귀</text>';
+  const Q=["옆에서 봤을 때 귀(귓구멍)가 어깨 중심보다 앞에 있나요? (옆 사람이나 거울로 확인)","같은 자세로 오래 앉아 있는 편인가요?","화면을 볼 때 고개를 숙이게 되나요?","30~40분 넘게 쉬지 않고 화면을 보나요?"];
+  const sel=i=>'<select class="dd" autocomplete="off" id="q'+i+'" aria-label="질문 '+(i+1)+' 응답"><option value="">선택</option><option>예</option><option>아니오</option></select>';
+  gridWrap.innerHTML=sheetHTML([
+   [cell("나는 거북이일까?",{s:6,c:"ttl"})],
+   [cell("E열에서 예/아니오를 골라 보세요.",{s:6,c:"sub"})],
+   [cell(chart("차트 2 · 귀-어깨 수직선",turtleSVG(lines),"귀에서 내린 선이 어깨선보다 앞에 있으면 거북목이에요"),{s:6,c:"chart"})],
+   [cell("번호",{c:"hdr"}),cell("질문",{s:3,c:"hdr"}),cell("응답",{s:2,c:"hdr"})],
+   ...Q.map((q,i)=>[cell(String(i+1),{c:"num"}),cell(q,{s:3}),cell(sel(i),{s:2})]),
+   [cell("거북이 위험도",{s:2,c:"lbl"}),cell('<span class="chip none" id="risk">응답을 골라 주세요</span>',{s:4,id:"riskCell"})],
+   [cell("※ 진단이 아닌 자가 확인용이에요. 귀-어깨 기준은 질병관리청 자료를 따랐어요.",{s:6,c:"small"})],
+   navRow(0,2)
+  ],18);
+  const upd=()=>{
+    const v=[0,1,2,3].map(i=>$("q"+i).value), yes=v.filter(x=>x==="예").length, answered=v.filter(Boolean).length;
+    const r=$("risk");
+    if(!answered){ r.className="chip none"; r.textContent="응답을 골라 주세요"; }
+    else if(yes===0){ r.className="chip ok"; r.textContent="안심! 바른 자세를 잘 지키고 있어요"; }
+    else if(yes<=2){ r.className="chip warn"; r.textContent="주의! 거북목이 되기 쉬운 습관이 있어요"; }
+    else { r.className="chip bad"; r.textContent="위험! 오늘부터 거북이 탈출 시작해요"; }
+    $("riskCell").classList.add("sel"); setBar("C9",'=COUNTIF(E5:E8,"예") → '+yes+"개");
+  };
+  [0,1,2,3].forEach(i=>$("q"+i).addEventListener("change",upd));
+  setBar("E5",'=COUNTIF(E5:E8,"예")'); setStatus("준비");
+ },
+ 2(){ // 머리무게
+  T.n=0; T.act="weight"; T.angle=0;
+  const ANG=[0,15,30,45,60], KG=[5,12,18,22,27];
+  const gauge='<rect x="10" y="34" width="18" height="96" fill="#F1F3F2" stroke="#C9D0CC"/><rect id="gFill" x="10" y="112" width="18" height="18" fill="#3E68B0"/>'
+   +'<text x="19" y="146" text-anchor="middle" font-size="10" fill="#5F6B66">kg</text>'
+   +'<rect x="34" y="6" width="92" height="30" rx="3" fill="#E6EDF8" stroke="#1F3A68"/>'
+   +'<text id="gTxt" x="80" y="27" text-anchor="middle" font-size="17" font-weight="800" fill="#1F3A68">약 5kg</text>';
+  gridWrap.innerHTML=sheetHTML([
+   [cell("내 목이 받는 무게",{s:6,c:"ttl"})],
+   [cell(chart("차트 3 · 고개 각도와 목이 받는 무게",turtleSVG(gauge),"슬라이더를 움직이거나 아래 표의 숫자를 눌러 보세요"),{s:6,c:"chart"})],
+   [cell("고개 숙인 각도",{s:2,c:"lbl"}),cell('<input class="ang" type="range" id="ang" min="0" max="60" step="15" value="0" aria-label="고개 숙인 각도">',{s:4})],
+   [cell("각도",{c:"hdr"}),...ANG.map((a,i)=>cell(a+"°",{c:"hdr",id:"ha"+i}))],
+   [cell("kg",{c:"hdr"}),...KG.map((k,i)=>cell(String(k),{c:"num",id:"hk"+i}))],
+   [cell("스마트폰을 볼 때 고개는 보통 37~47도 숙여져요. 이때 목이 받는 무게는 평소의 3~4배예요.",{s:6})],
+   [cell(SRC,{s:6,c:"small"})],
+   navRow(1,3)
+  ],18);
+  const upd=()=>{
+    const a=+$("ang").value, i=ANG.indexOf(a), kg=KG[i];
+    T.angle=a;
+    KG.forEach((_,j)=>{ $("hk"+j).classList.toggle("hl",j===i); $("hk"+j).classList.toggle("sel",j===i); $("ha"+j).classList.toggle("hl",j===i); });
+    $("gTxt").textContent="약 "+kg+"kg";
+    const h=96*kg/27; $("gFill").setAttribute("y",(130-h).toFixed(1)); $("gFill").setAttribute("height",h.toFixed(1));
+    setBar("ABCDEF"[i+1]+"5","=목무게("+a+"°) → "+kg+"kg");
+  };
+  $("ang").addEventListener("input",upd);
+  ANG.forEach((a,j)=>["ha","hk"].forEach(p=>{ const c=$(p+j); c.classList.add("pick"); c.tabIndex=0; c.setAttribute("role","button"); c.setAttribute("aria-label",a+"도, "+KG[j]+"킬로그램");
+    const f=()=>{ $("ang").value=a; upd(); }; c.addEventListener("click",f); c.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); f(); } }); }));
+  upd();
+  setStatus("준비");
+ },
+ 3(){ // 바른자세
+  T.n=0;
+  gridWrap.innerHTML=sheetHTML([
+   [cell("바른 자세 3가지",{s:6,c:"ttl"})],
+   [cell(chart("차트 4 · 바른 거북이",turtleSVG(),"목이 어깨 위에 쏙 올라간 자세"),{s:6,c:"chart"})],
+   [cell("번호",{c:"hdr"}),cell("이렇게 해요",{s:2,c:"hdr"}),cell("방법",{s:3,c:"hdr"})],
+   [cell("1",{c:"num"}),cell("화면은 눈높이에",{s:2,c:"lbl"}),cell("거치대 등을 써서 목이 구부러지지 않게 해요.",{s:3})],
+   [cell("2",{c:"num"}),cell("같은 자세로 오래 있지 않기",{s:2,c:"lbl"}),cell("중간중간 자세를 바꿔 주세요.",{s:3})],
+   [cell("3",{c:"num"}),cell("30~40분마다 쉬기",{s:2,c:"lbl"}),cell("잠깐 멈추고 목을 가볍게 돌려 주세요.",{s:3})],
+   [cell(SRC,{s:6,c:"small"})],
+   navRow(2,4)
+  ],18);
+  setBar("B4","=바른자세(3)"); setStatus("준비");
+ },
+ 4(){ // 약속
+  T.n=1;
+  const P=["가볍게 늘어나는 느낌까지만 해요.","뻐근할 만큼 세게 늘리지 않아요. 오히려 다칠 수 있어요.","아프거나 저리면 바로 멈춰요.","숨은 참지 말고 편하게 쉬어요."];
+  gridWrap.innerHTML=sheetHTML([
+   [cell("시작 전 약속",{s:6,c:"ttl"})],
+   [cell("체크하면서 읽어 보세요.",{s:6,c:"sub"})],
+   ...P.map((p,i)=>[cell('<label class="chk"><input type="checkbox" id="p'+i+'" aria-label="약속 '+(i+1)+'"></label>'),cell('<label for="p'+i+'">'+p+"</label>",{s:5})]),
+   [cell("동작",{s:2,c:"lbl"}),cell("목·어깨 5가지, 앉은 자리에서",{s:4})],
+   [cell("시간",{s:2,c:"lbl"}),cell("약 5분, 한 동작이 끝나면 ‘다음 동작’을 눌러요",{s:4})],
+   [cell('<button class="btn" type="button" id="goStretch">스트레칭 시작 ▶</button>',{s:6,c:"btncell"})],
+   [cell('<button class="btn sub" type="button" data-go="3">◀ 이전</button>',{s:3,c:"btncell"}),cell("",{s:3})]
+  ],18);
+  $("goStretch").addEventListener("click",startStretching);
+  setBar("A3","=약속지키기(4)"); setStatus("준비");
+ },
+ move(i){
+  const mi=i-FIRST_MOVE, m=MOVES[mi];
+  gridWrap.innerHTML=sheetHTML([
+   [cell(m.name,{s:4,c:"ttl"}),cell(m.meta,{s:2,c:"lbl"})],
+   [cell(chart("차트 "+(5+mi)+" · "+(mi+1)+"/5 · "+(m.front?"앞모습":"옆모습"),m.front?turtleFrontSVG(guideArt(m.key,T.n),m.key==="blade"?"translate(-28 8) scale(0.9)":""):turtleSVG(guideArt(m.key,T.n))),{s:6,c:"chart"})],
+   [cell("준비",{s:2,c:"st",id:"st"}),cell('<div class="note" id="note"></div><div id="cntIn"><span class="big prep">▶</span></div>',{s:4,c:"cnt sel cmt",id:"cnt"})],
+   [cell('<div class="barwrap"><div class="bar grey" id="bar" style="width:100%"></div></div>',{s:6})],
+   [cell("방법",{c:"lbl"}),cell(m.how,{s:5})],
+   [cell("핵심",{c:"lbl"}),cell(m.point,{s:5})],
+   [cell('<div id="ctrl" style="display:flex;gap:6px"></div>',{s:6,c:"btncell"})],
+   [cell("출처",{c:"lbl"}),cell(m.basis,{s:5,c:"small"})]
+  ],16);
+  setBar("C3",m.formula);
+  if(m.key==="blade"){ const h=$("tHint"); if(h){ h.setAttribute("x","84"); h.setAttribute("y","16"); h.setAttribute("font-size","14"); } }
+  if(m.key==="roll"){ const h=$("tHint"); if(h) h.setAttribute("x","212"); }
+  if(run&&run.mi===mi){ setControls(); }
+  else { idleControls(mi); setStatus("준비"); }
+ },
+ check(){
+  // (자가체크 시트)
+  T.n=0;
+  const Q=["턱 당기기: 고개를 숙이지 않고 턱을 뒤로 당겼나요?","목 늘리기: 가볍게 늘어나는 느낌까지만 했나요?","날개뼈 모으기: 어깨가 귀 쪽으로 올라가지 않았나요?","목 돌리기: 빠르지 않게 천천히 돌렸나요?","아프거나 저린 곳 없이 끝냈나요?"];
+  const sel=(id,opts,label)=>'<select class="dd" autocomplete="off" id="'+id+'" aria-label="'+label+'"><option value="">선택</option>'+opts.map(o=>"<option>"+o+"</option>").join("")+"</select>";
+  gridWrap.innerHTML=sheetHTML([
+   [cell("잘 했나요?",{s:6,c:"ttl"})],
+   [cell("오늘 스트레칭을 돌아보며 E열에서 골라 보세요.",{s:6,c:"sub"})],
+   [cell("번호",{c:"hdr"}),cell("스스로 체크",{s:3,c:"hdr"}),cell("응답",{s:2,c:"hdr"})],
+   ...Q.map((q,i)=>[cell(String(i+1),{c:"num"}),cell(q,{s:3}),cell(sel("c"+i,["예","아니오"],"체크 "+(i+1)+" 응답"),{s:2})]),
+   [cell("지금 목·어깨 느낌",{s:4,c:"lbl"}),cell(sel("feel",["개운해요","그대로예요","불편해요"],"지금 목과 어깨 느낌"),{s:2})],
+   [cell("잘한 항목",{s:2,c:"lbl"}),cell('<span class="chip none" id="cRes">응답을 골라 주세요</span>',{s:4,id:"cResCell"})],
+   [cell("",{s:6,c:"small",id:"cAdv"})],
+   [cell('<button class="btn sub" type="button" data-go="'+FIRST_MOVE+'">◀ 동작 다시 보기</button>',{s:3,c:"btncell"}),cell('<button class="btn" type="button" id="toDone">완료 보기 ▶</button>',{s:3,c:"btncell"})]
+  ],18);
+  const upd=()=>{
+    const v=Q.map((_,i)=>$("c"+i).value), yes=v.filter(x=>x==="예").length, ans=v.filter(Boolean).length, feel=$("feel").value;
+    const r=$("cRes");
+    if(!ans){ r.className="chip none"; r.textContent="응답을 골라 주세요"; }
+    else if(yes===5){ r.className="chip ok"; r.textContent="5 / 5 완벽해요!"; }
+    else if(yes>=3){ r.className="chip ok"; r.textContent=yes+" / 5 잘했어요!"; }
+    else { r.className="chip warn"; r.textContent=yes+" / 5 다음엔 핵심을 다시 봐요"; }
+    $("cResCell").classList.add("sel");
+    const warn=v[4]==="아니오"||feel==="불편해요";
+    $("cAdv").textContent=warn?"무리하지 말고 쉬어요. 아프거나 저린 느낌이 계속되면 전문가와 상담하세요.":(feel==="개운해요"?"좋아요! 30~40분 뒤에 또 해 봐요.":"");
+    setBar("C10",'=COUNTIF(E4:E8,"예") → '+yes+"개");
+    updateRec(curRec,{score:ans?yes:null, feel:feel});
+  };
+  Q.forEach((_,i)=>$("c"+i).addEventListener("change",upd)); $("feel").addEventListener("change",upd);
+  $("toDone").addEventListener("click",()=>{ goTo(DONE_SHEET); if(doneMoves.size){ sfx("fanfare"); buzz(); } });
+  setBar("E4",'=COUNTIF(E4:E8,"예")'); setStatus("자가체크");
+ },
+ done(){
+  T.n=0; T.act="upright";
+  const art='<g opacity=".55"><circle cx="222" cy="92" r="25" fill="none" stroke="#7D8A84" stroke-width="2.2" stroke-dasharray="5 4"/>'
+   +'<text x="222" y="97" text-anchor="middle" font-size="11" font-weight="700" fill="#5F6B66">거북목</text></g>'
+   +'<path d="M236 64 Q236 38 212 36" fill="none" stroke="#1F3A68" stroke-width="2.4" stroke-linecap="round"/>'
+   +'<polygon points="206,36 215,30 215,42" fill="#1F3A68"/>'
+   +'<line x1="167" y1="14" x2="167" y2="134" stroke="#1F3A68" stroke-width="2" stroke-dasharray="5 4"/>'
+   +'<text x="167" y="146" text-anchor="middle" font-size="11" font-weight="700" fill="#1F3A68">귀·어깨 일직선</text>'
+   +'<path d="M206 14 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5z" fill="#E8B931"/>'
+   +'<path d="M140 30 l1.8 4.2 4.2 1.8 -4.2 1.8 -1.8 4.2 -1.8 -4.2 -4.2 -1.8 4.2 -1.8z" fill="#E8B931"/>';
+  const sec=Math.max(0,Math.round((Date.now()-sessionStart)/1000));
+  const d=new Date(), ds=(d.getMonth()+1)+"."+d.getDate();
+  gridWrap.innerHTML=sheetHTML([
+   [cell("탈출 성공!",{s:6,c:"ttl"})],
+   [cell(doneMsg(),{s:6})],
+   [cell('<div class="chartbox"><div class="ctitle">차트 10 · 거북목 탈출</div>'+turtleSVG(art)+'<div class="cap">귀와 어깨가 일직선! 거북목에서 탈출했어요</div><div class="stamp">탈출<br>성공<small>'+ds+'</small></div></div>',{s:6,c:"chart"})],
+   [cell("한 동작",{s:2,c:"lbl"}),cell(doneMoves.size+"가지 / 5가지",{s:4,c:"num"})],
+   [cell("걸린 시간",{s:2,c:"lbl"}),cell(sessionStart?Math.floor(sec/60)+"분 "+(sec%60)+"초":"-",{s:4,c:"num sel"})],
+   [cell("30~40분 뒤에 또 만나요. 그 사이에도 자리에서 목을 가볍게 돌려 주세요.",{s:6})],
+   [cell('<button class="btn" type="button" id="again">한 번 더 하기</button>',{s:3,c:"btncell"}),cell('<button class="btn sub" type="button" data-go="0">처음으로</button>',{s:3,c:"btncell"})],
+   [cell(SRC,{s:6,c:"small"})]
+  ],16);
+  $("again").addEventListener("click",startStretching);
+  setBar("C4","=SUM(오늘의스트레칭) → 탈출 성공"); setStatus("완료");
+ }
+};
+
+gridWrap.addEventListener("click",e=>{ const b=e.target.closest("[data-go]"); if(b) goTo(+b.dataset.go); });
+
+/* 스와이프로 시트 넘기기 (설명 시트만) */
+let sx=0, sy=0;
+gridWrap.addEventListener("touchstart",e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; },{passive:true});
+gridWrap.addEventListener("touchend",e=>{
+  if(cur>=FIRST_MOVE) return;
+  const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+  if(Math.abs(dx)>70&&Math.abs(dy)<50){ if(dx<0&&cur<4) goTo(cur+1); else if(dx>0&&cur>0) goTo(cur-1); }
+},{passive:true});
+
+/* ===== 스트레칭 진행 ===== */
+function phasesFor(m){
+  const p=[{type:"prep",dur:5}];
+  if(m.roll){ p.push({type:"roll",dir:1,dur:m.reps*m.per}); p.push({type:"switch",dur:3}); p.push({type:"roll",dir:-1,dur:m.reps*m.per}); }
+  else for(let s=1;s<=m.sets;s++){ if(s>1) p.push({type:"rest",dur:5}); p.push({type:"hold",dur:m.hold,set:s}); }
+  return p;
+}
+function startStretching(){
+  doneMoves=new Set(); sessionStart=Date.now(); curRec=null; lastAward=null; lockScreen();
+  if(soundOn&&ctx){ try{ctx.resume()}catch(e){} }
+  startMove(0);
+}
+function startMove(mi){
+  run={mi:mi, phases:phasesFor(MOVES[mi]), pi:-1, running:true, remain:0, lastSec:null, lastRep:0};
+  goTo(FIRST_MOVE+mi,{keepRun:true});
+  if(!sessionStart) sessionStart=Date.now();
+  lockScreen(); nextPhase(); setControls();
+}
+function idleControls(mi){
+  const c=$("ctrl"); if(!c) return;
+  c.innerHTML='<button class="btn" type="button" id="cStart">▶ 이 동작부터 시작</button>';
+  $("cStart").addEventListener("click",()=>{ if(!sessionStart||!doneMoves.size) sessionStart=Date.now(); startMove(mi); });
+}
+function setControls(){
+  const c=$("ctrl"); if(!c||!run) return;
+  if(run.finished){
+    const mi=run.mi, last=mi===MOVES.length-1;
+    c.innerHTML='<button class="btn sub" type="button" id="cAgain">↻ 다시 하기</button><button class="btn" type="button" id="cNext">'+(last?"자가체크 ▶":"다음 동작 ▶")+'</button>';
+    $("cAgain").addEventListener("click",()=>startMove(mi));
+    $("cNext").addEventListener("click",()=>advance(mi));
+    setStatus("완료 · 다음을 눌러 주세요");
+    return;
+  }
+  c.innerHTML='<button class="btn sub" type="button" id="cPause">'+(run.running?"일시정지":"계속하기")+'</button><button class="btn sub" type="button" id="cSkip">건너뛰기 ▶</button>';
+  $("cPause").addEventListener("click",togglePause);
+  $("cSkip").addEventListener("click",()=>{ if(run) moveDone(true); });
+  setStatus(run.running?"진행 중":"일시정지");
+}
+function togglePause(){ if(!run) return; run.running=!run.running; duck(!run.running); if(run.running) lockScreen(); setControls(); }
+function note(msg){ const n=$("note"); if(!n) return; n.textContent=msg; n.classList.remove("pop"); void n.offsetWidth; n.classList.add("pop"); }
+
+function nextPhase(){
+  run.pi++;
+  if(run.pi>=run.phases.length){ finishMove(); return; }
+  const ph=run.phases[run.pi], m=MOVES[run.mi];
+  run.remain=ph.dur; run.lastSec=null; run.lastRep=0;
+  T.hint="";
+  if(ph.type==="prep"){ T.act="none"; note("다음은 "+m.name+"! 준비~"); }
+  if(ph.type==="rest"){ T.act="none"; note("잘했어요! 잠깐 쉬고 한 번 더!"); }
+  if(ph.type==="switch"){ T.act="none"; note("이번엔 반대 방향으로!"); }
+  if(ph.type==="hold"){ T.act=m.key; T.hint=m.hint; note("천천히, 가볍게~"); }
+  if(ph.type==="roll"){ T.act="roll"; T.rollAngle=0; setRollArrow(ph.dir); T.hint=ph.dir>0?"↻ 시계 방향":"↺ 반시계 방향"; note("천천히 크게 원을 그려요"); }
+  if(ph.type==="done"){ T.act="none"; T.n=1-(run.mi+1)/5; note("다 왔어요!"); }
+  paintPhase(true);
+}
+function advance(mi){
+  if(mi<MOVES.length-1){ startMove(mi+1); }
+  else{ run=null; unlockScreen(); duck(false); curRec=(doneMoves.size===MOVES.length)?recordSession():null; goTo(CHECK_SHEET); }
+}
+function moveDone(skipped){ const mi=run.mi; if(!skipped) doneMoves.add(mi); advance(mi); }
+function finishMove(){
+  const mi=run.mi, last=mi===MOVES.length-1;
+  doneMoves.add(mi); run.finished=true; run.running=false;
+  T.act="none"; T.hint="잘했어요!"; T.n=1-(mi+1)/5;
+  const cnt=$("cntIn"), st=$("st"), bar=$("bar");
+  if(cnt) cnt.innerHTML='<span class="big txt">다 왔어요!</span>';
+  if(st) st.textContent="완료";
+  if(bar){ bar.className="bar"; bar.style.width="0%"; }
+  note(last?"모두 끝! 준비되면 ‘자가체크’를 눌러요":"준비되면 ‘다음 동작’을 눌러요");
+  renderTabs(); setControls();
+}
+const HOLD_MSG={22:"숨 참지 말고 후~",15:"절반 왔어요!",5:"5초 남았어요!"};
+function paintPhase(force){
+  const ph=run.phases[run.pi], m=MOVES[run.mi];
+  const cnt=$("cntIn"), st=$("st"), bar=$("bar"); if(!cnt) return;
+  const sec=Math.max(0,Math.ceil(run.remain-1e-6));
+  const elapsed=ph.dur-run.remain;
+  if(ph.type==="roll"){
+    const rep=Math.min(m.reps,Math.floor(elapsed/m.per)+1);
+    T.rollAngle=ph.dir*(elapsed/m.per)*Math.PI*2;
+    if(force||rep!==run.lastRep){
+      if(!force&&rep>run.lastRep) sfx("soft");
+      run.lastRep=rep;
+      cnt.innerHTML='<span class="big">'+rep+'</span><span class="unit">/ '+m.reps+'회</span>';
+      st.textContent=ph.dir>0?"↻ 시계 방향":"↺ 반시계 방향";
+    }
+    bar.className="bar"; bar.style.width=(100*run.remain/ph.dur)+"%";
+    return;
+  }
+  if(!force&&sec===run.lastSec) return;
+  run.lastSec=sec;
+  if(ph.type==="hold"){
+    cnt.innerHTML='<span class="big">'+sec+'</span><span class="unit">초</span>';
+    st.textContent=m.sets>1?ph.set+"회차 / "+m.sets+"회":"유지하기";
+    bar.className="bar"; bar.style.width=(100*run.remain/ph.dur)+"%";
+    if(!force){ if(sec<=3&&sec>=1) sfx("tick"); if(HOLD_MSG[sec]) note(HOLD_MSG[sec]); }
+  }else if(ph.type==="done"){
+    cnt.innerHTML='<span class="big txt">다 왔어요!</span>';
+    st.textContent="완료"; bar.className="bar"; bar.style.width="0%";
+  }else{
+    cnt.innerHTML='<span class="big prep">'+sec+'</span>';
+    st.textContent=ph.type==="prep"?"준비":ph.type==="rest"?"쉬는 시간":"방향 바꾸기";
+    bar.className="bar grey"; bar.style.width=(100*run.remain/ph.dur)+"%";
+  }
+}
+function phaseEnd(ph){
+  if(ph.type==="hold"||ph.type==="roll"){ sfx("ding"); buzz(); }
+}
+
+/* ===== 메인 루프 ===== */
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(0.25,(now-last)/1000); last=now;
+  if(run&&run.running&&cur===FIRST_MOVE+run.mi){
+    const ph=run.phases[run.pi];
+    run.remain-=dt;
+    if(run.remain<=0){ phaseEnd(ph); nextPhase(); }
+    else paintPhase(false);
+  }
+  drawTurtle(dt);
+  requestAnimationFrame(loop);
+}
+
+paintSound();
+function home(){ run=null; unlockScreen(); try{ if(location.hash) history.replaceState(null,"",location.pathname+location.search); }catch(e){} window.scrollTo(0,0); goTo(0); tabsEl.scrollLeft=0; }
+home();
+window.addEventListener("pageshow",e=>{ if(e.persisted) home(); });
+requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>
